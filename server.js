@@ -3,6 +3,7 @@ const fs = require("fs");
 const querystring = require('querystring');
 
 const elements = [];
+var date = new Date().toUTCString();
 
 function generatePage(elementName, elementSymbol, elementNumber, elementDescription) {
   return `
@@ -33,7 +34,7 @@ const server = http.createServer(function(request, response) {
         if (err) throw err;
         console.log(newElem.elementName + " file was written!");
       })
-      var date = new Date().toUTCString();
+
       response.writeHead(200, {
         "Content-Type": "application/json",
         "success": "true",
@@ -41,13 +42,22 @@ const server = http.createServer(function(request, response) {
       })
       response.end();
     })
-    response.writeHead(200, {
-      "Content-Type": "application, json",
-      "success": "true"
-    })
+
   } else if (request.method === "GET") {
     if(request.url === "/"){
-      
+      var path = "./public".concat(request.url).concat('index.html');
+      console.log(path);
+      var data = fs.readFileSync(path).toString();
+      console.log(data);
+      response.writeHead(200, {
+        "Server": "Facebook",
+        "Content-Type": "text/html",
+        "success": "true",
+        "Date": `${date}`,
+        "Content-Length": `${data.length}`
+      });
+      response.write(data);
+      response.end();
     }
   }
 })

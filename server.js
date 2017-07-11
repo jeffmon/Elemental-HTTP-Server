@@ -25,12 +25,16 @@ function generatePage(elementName, elementSymbol, elementNumber, elementDescript
   `
 }
 
+var index = fs.readFileSync("./public/index.html");
+var css = fs.readFileSync("./public/css/styles.css");
+var error404 = fs.readFileSync("./public/404.html");
+
 const server = http.createServer(function(request, response) {
   if (request.method === "POST") {
     request.on("data", function(data) {
       var info = data.toString();
       var newElem = querystring.parse(info)
-      fs.appendFile(`public/${newElem.elementName}.html`, generatePage(newElem.elementName, newElem.elementSymbol, newElem.elementAtomicNumber, newElem.elementDescription), function(err) {
+      fs.writeFile(`public/${newElem.elementName}.html`, generatePage(newElem.elementName, newElem.elementSymbol, newElem.elementAtomicNumber, newElem.elementDescription), function(err) {
         if (err) throw err;
         console.log(newElem.elementName + " file was written!");
       })
@@ -44,19 +48,48 @@ const server = http.createServer(function(request, response) {
     })
 
   } else if (request.method === "GET") {
-    if(request.url === "/"){
-      var path = "./public".concat(request.url).concat('index.html');
-      console.log(path);
-      var data = fs.readFileSync(path).toString();
-      console.log(data);
+    console.log(request.url);
+    var exists = fs.existsSync(`./public${request.url}`)
+    if (request.url === "/") {
       response.writeHead(200, {
         "Server": "Facebook",
         "Content-Type": "text/html",
         "success": "true",
         "Date": `${date}`,
-        "Content-Length": `${data.length}`
+        "Content-Length": `${index.length}`
       });
-      response.write(data);
+      response.write(index);
+      response.end();
+    } else if (request.url === "/css/styles.css") {
+      response.writeHead(200, {
+        "Server": "Facebook",
+        "Content-Type": "text/css",
+        "success": "true",
+        "Date": `${date}`,
+        "Content-Length": `${css.length}`
+      });
+      response.write(css.toString());
+      response.end();
+    } else if (exists) {
+      var existingElement = fs.readFileSync(`./public${request.url}`);
+      response.writeHead(200, {
+        "Server": "Facebook",
+        "Content-Type": "text/html",
+        "success": "true",
+        "Date": `${date}`,
+        "Content-Length": `${existingElement.length}`
+      });
+      response.write(existingElement);
+      response.end();
+    } else {
+      response.writeHead(200, {
+        "Server": "Facebook",
+        "Content-Type": "text/html",
+        "success": "true",
+        "Date": `${date}`,
+        "Content-Length": `${error404.length}`
+      });
+      response.write(error404);
       response.end();
     }
   }

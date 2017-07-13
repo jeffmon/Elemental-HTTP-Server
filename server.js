@@ -6,7 +6,13 @@ var date = new Date().toUTCString();
 var index = fs.readFileSync("./public/index.html");
 var css = fs.readFileSync("./public/css/styles.css");
 var error404 = fs.readFileSync("./public/404.html");
-var elementHTML = [{name: "Hydrogen", html: "/hydrogen.html"}, {name: "Helium", html: "/helium.html"}]
+var elementHTML = [{
+  name: "Hydrogen",
+  html: "/hydrogen.html"
+}, {
+  name: "Helium",
+  html: "/helium.html"
+}]
 var elementList = ``;
 var count = 2;
 
@@ -30,8 +36,8 @@ function generatePage(elementName, elementSymbol, elementNumber, elementDescript
   `
 }
 
-function addElementHTML(arr){
-  for(var i = 0; i < arr.length; i++){
+function addElementHTML(arr) {
+  for (var i = 0; i < arr.length; i++) {
     var name = arr[i].replace(/.html/, "");
     elementList += `
     <li>
@@ -42,7 +48,7 @@ function addElementHTML(arr){
   return elementList;
 }
 
-function generateIndex(text){
+function generateIndex(text) {
   return `
   <!DOCTYPE html>
   <html lang="en">
@@ -63,10 +69,10 @@ function generateIndex(text){
   `
 }
 
-function currentElements(arr){
+function currentElements(arr) {
   var newArr = [];
-  for(var i = 0; i < arr.length; i++){
-    if(arr[i] !== ".keep"&&arr[i] !== "404.html"&&arr[i] !== "index.html"&&arr[i] !== "css"){
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i] !== ".keep" && arr[i] !== "404.html" && arr[i] !== "index.html" && arr[i] !== "css") {
       newArr.push(arr[i]);
     }
   }
@@ -74,25 +80,27 @@ function currentElements(arr){
 }
 
 const server = http.createServer(function(request, response) {
-  if (request.method === "POST") {
-    request.on("data", function(data) {
-      var info = data.toString();
-      var newElem = querystring.parse(info);
-      count++;
-      fs.writeFile(`public/${newElem.elementName}.html`, generatePage(newElem.elementName, newElem.elementSymbol, newElem.elementAtomicNumber, newElem.elementDescription), function(err) {
-        if (err) throw err;
-        console.log(newElem.elementName + " file was written!");
+  if (request.url === "/elements") {
+    if (request.method === "POST") {
+      request.on("data", function(data) {
+        var info = data.toString();
+        var newElem = querystring.parse(info);
+        count++;
+        fs.writeFile(`public/${newElem.elementName}.html`, generatePage(newElem.elementName, newElem.elementSymbol, newElem.elementAtomicNumber, newElem.elementDescription), function(err) {
+          if (err) throw err;
+          console.log(newElem.elementName + " file was written!");
+        })
+
+        response.writeHead(200, {
+          "Content-Type": "application/json",
+          "success": "true",
+          "Date": `${date}`
+        })
+        response.write(index);
+        response.end();
       })
 
-      response.writeHead(200, {
-        "Content-Type": "application/json",
-        "success": "true",
-        "Date": `${date}`
-      })
-      response.write(index);
-      response.end();
-    })
-
+    }
   } else if (request.method === "GET") {
 
     var files = fs.readdirSync("./public/");

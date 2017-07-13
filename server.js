@@ -2,8 +2,13 @@ const http = require("http");
 const fs = require("fs");
 const querystring = require('querystring');
 
-const elements = [];
 var date = new Date().toUTCString();
+var index = fs.readFileSync("./public/index.html");
+var css = fs.readFileSync("./public/css/styles.css");
+var error404 = fs.readFileSync("./public/404.html");
+var elementHTML = [{name: "Hydrogen", html: "/hydrogen.html"}, {name: "Helium", html: "/helium.html"}]
+var elementList = ``;
+var count = 2;
 
 function generatePage(elementName, elementSymbol, elementNumber, elementDescription) {
   return `
@@ -25,15 +30,55 @@ function generatePage(elementName, elementSymbol, elementNumber, elementDescript
   `
 }
 
-var index = fs.readFileSync("./public/index.html");
-var css = fs.readFileSync("./public/css/styles.css");
-var error404 = fs.readFileSync("./public/404.html");
+function addElementHTML(arr){
+  for(var i = 0; i < arr.length; i++){
+    var name = arr[i].replace(/.html/, "");
+    elementList += `
+    <li>
+      <a href="${arr[i]}">${name}</a>
+    </li>
+    `
+  }
+  return elementList;
+}
+
+function generateIndex(text){
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>The Elements</title>
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <h1>The Elements</h1>
+    <h2>These are all the known elements.</h2>
+    <h3>These are ${count}</h3>
+    <ol>
+      ${text}
+    </ol>
+  </body>
+  </html>
+  `
+}
+
+function currentElements(arr){
+  var newArr = [];
+  for(var i = 0; i < arr.length; i++){
+    if(arr[i] !== ".keep"&&arr[i] !== "404.html"&&arr[i] !== "index.html"&&arr[i] !== "css"){
+      newArr.push(arr[i]);
+    }
+  }
+  return newArr;
+}
 
 const server = http.createServer(function(request, response) {
   if (request.method === "POST") {
     request.on("data", function(data) {
       var info = data.toString();
-      var newElem = querystring.parse(info)
+      var newElem = querystring.parse(info);
+      count++;
       fs.writeFile(`public/${newElem.elementName}.html`, generatePage(newElem.elementName, newElem.elementSymbol, newElem.elementAtomicNumber, newElem.elementDescription), function(err) {
         if (err) throw err;
         console.log(newElem.elementName + " file was written!");
@@ -44,12 +89,17 @@ const server = http.createServer(function(request, response) {
         "success": "true",
         "Date": `${date}`
       })
+      response.write(index);
       response.end();
     })
 
   } else if (request.method === "GET") {
-    console.log(request.url);
+
+    var files = fs.readdirSync("./public/");
+    var onlyElements = currentElements(files);
     var exists = fs.existsSync(`./public${request.url}`)
+    //console.log(generateIndex(addElementHTML(onlyElements)))
+
     if (request.url === "/") {
       response.writeHead(200, {
         "Server": "Facebook",
@@ -58,6 +108,8 @@ const server = http.createServer(function(request, response) {
         "Date": `${date}`,
         "Content-Length": `${index.length}`
       });
+      index = fs.readFileSync("./public/index.html");
+      //console.log(generateIndex(addElementHTML(onlyElements)))
       response.write(index);
       response.end();
     } else if (request.url === "/css/styles.css") {
